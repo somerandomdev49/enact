@@ -28,6 +28,7 @@ public:
 
 typedef std::shared_ptr<ExprBase> Expr;
 
+class AnyExpr;
 class ArrayExpr;
 class AssignExpr;
 class BinaryExpr;
@@ -37,17 +38,18 @@ class FieldExpr;
 class FloatExpr;
 class IntegerExpr;
 class LogicalExpr;
+class MemoryExpr;
 class NilExpr;
 class StringExpr;
 class SubscriptExpr;
 class TernaryExpr;
 class UnaryExpr;
-class AnyExpr;
 class VariableExpr;
 
 template <class R>
 class ExprVisitor {
 public:
+    virtual R visitAnyExpr(AnyExpr& expr) = 0;
     virtual R visitArrayExpr(ArrayExpr& expr) = 0;
     virtual R visitAssignExpr(AssignExpr& expr) = 0;
     virtual R visitBinaryExpr(BinaryExpr& expr) = 0;
@@ -57,13 +59,27 @@ public:
     virtual R visitFloatExpr(FloatExpr& expr) = 0;
     virtual R visitIntegerExpr(IntegerExpr& expr) = 0;
     virtual R visitLogicalExpr(LogicalExpr& expr) = 0;
+    virtual R visitMemoryExpr(MemoryExpr& expr) = 0;
     virtual R visitNilExpr(NilExpr& expr) = 0;
     virtual R visitStringExpr(StringExpr& expr) = 0;
     virtual R visitSubscriptExpr(SubscriptExpr& expr) = 0;
     virtual R visitTernaryExpr(TernaryExpr& expr) = 0;
     virtual R visitUnaryExpr(UnaryExpr& expr) = 0;
-    virtual R visitAnyExpr(AnyExpr& expr) = 0;
     virtual R visitVariableExpr(VariableExpr& expr) = 0;
+};
+
+class AnyExpr : public ExprBase {
+public:
+    AnyExpr() = default;
+    ~AnyExpr() override = default;
+
+    std::string accept(ExprVisitor<std::string> *visitor) override {
+        return visitor->visitAnyExpr(*this);
+    }
+
+    void accept(ExprVisitor<void> *visitor) override {
+        return visitor->visitAnyExpr(*this);
+    }
 };
 
 class ArrayExpr : public ExprBase {
@@ -231,6 +247,24 @@ public:
     }
 };
 
+class MemoryExpr : public ExprBase {
+public:
+    Expr object;
+    Token oper;
+
+    MemoryExpr(Expr object,Token oper) : 
+        object{object},oper{oper} {}
+    ~MemoryExpr() override = default;
+
+    std::string accept(ExprVisitor<std::string> *visitor) override {
+        return visitor->visitMemoryExpr(*this);
+    }
+
+    void accept(ExprVisitor<void> *visitor) override {
+        return visitor->visitMemoryExpr(*this);
+    }
+};
+
 class NilExpr : public ExprBase {
 public:
     NilExpr() = default;
@@ -316,20 +350,6 @@ public:
 
     void accept(ExprVisitor<void> *visitor) override {
         return visitor->visitUnaryExpr(*this);
-    }
-};
-
-class AnyExpr : public ExprBase {
-public:
-    AnyExpr() = default;
-    ~AnyExpr() override = default;
-
-    std::string accept(ExprVisitor<std::string> *visitor) override {
-        return visitor->visitAnyExpr(*this);
-    }
-
-    void accept(ExprVisitor<void> *visitor) override {
-        return visitor->visitAnyExpr(*this);
     }
 };
 

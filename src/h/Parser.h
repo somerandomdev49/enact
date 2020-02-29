@@ -122,6 +122,7 @@ private:
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // CLASS
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // CONST
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // CONTINUE
+            ParseRule{&Parser::unary,               nullptr,            Precedence::UNARY}, // COPY
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // EACH
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // ELSE
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // END
@@ -132,6 +133,7 @@ private:
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // IF
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // IN
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // IS
+            ParseRule{&Parser::unary,               nullptr,            Precedence::NONE}, // MOVE
             ParseRule{&Parser::literal,    nullptr,            Precedence::NONE}, // NIL
             ParseRule{nullptr,               &Parser::binary,            Precedence::OR}, // OR
             ParseRule{nullptr,               nullptr,            Precedence::NONE}, // RETURN

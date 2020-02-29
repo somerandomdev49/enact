@@ -401,6 +401,10 @@ void Compiler::visitLogicalExpr(LogicalExpr &expr) {
     patchJump(jumpIndex, expr.oper);
 }
 
+void Compiler::visitMemoryExpr(MemoryExpr &expr) {
+    throw errorAt(expr.oper, "Not implemented.");
+}
+
 void Compiler::visitNilExpr(NilExpr &expr) {
     emitByte(OpCode::NIL);
 }

@@ -32,6 +32,7 @@ class AstPrinter : private StmtVisitor<std::string>, private ExprVisitor<std::st
     std::string visitFloatExpr(FloatExpr& expr) override;
     std::string visitIntegerExpr(IntegerExpr& expr) override;
     std::string visitLogicalExpr(LogicalExpr& expr) override;
+    std::string visitMemoryExpr(MemoryExpr& expr) override;
     std::string visitNilExpr(NilExpr& expr) override;
     std::string visitStringExpr(StringExpr& expr) override;
     std::string visitSubscriptExpr(SubscriptExpr& expr) override;

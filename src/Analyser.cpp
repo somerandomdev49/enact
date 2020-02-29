@@ -584,6 +584,10 @@ void Analyser::visitLogicalExpr(LogicalExpr &expr) {
     expr.setType(m_types["bool"]);
 }
 
+void Analyser::visitMemoryExpr(MemoryExpr &expr) {
+    throw errorAt(expr.oper, "Not implemented.");
+}
+
 void Analyser::visitNilExpr(NilExpr &expr) {
     expr.setType(m_types["nothing"]);
 }

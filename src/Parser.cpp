@@ -93,7 +93,18 @@ Expr Parser::unary() {
 
     Expr expr = parsePrecedence(Precedence::UNARY);
 
-    return std::make_shared<UnaryExpr>(expr, oper);
+    switch (oper.type) {
+        case TokenType::MOVE:
+        case TokenType::COPY:
+            return std::make_shared<MemoryExpr>(expr, oper);
+
+        case TokenType::BANG:
+        case TokenType::MINUS:
+            return std::make_shared<UnaryExpr>(expr, oper);
+
+        default:
+            break; // Unreachable!
+    }
 }
 
 Expr Parser::call(Expr callee) {
@@ -207,7 +218,7 @@ Stmt Parser::functionDeclaration(bool mustParseBody) {
     std::vector<Stmt> body;
 
     if (!mustParseBody && consumeSeparator()) {
-        return std::make_shared<FunctionStmt>(name, typeName, params, body);
+        return std::make_shared<FunctionStmt>(name, typeName, params, body, nullptr);
     }
 
     expect(TokenType::COLON, "Expected ':' before function body.");
@@ -221,7 +232,7 @@ Stmt Parser::functionDeclaration(bool mustParseBody) {
 
     expectSeparator("Expected newline or ';' after function declaration.");
 
-    return std::make_shared<FunctionStmt>(name, typeName, params, body);
+    return std::make_shared<FunctionStmt>(name, typeName, params, body, nullptr);
 }
 
 Stmt Parser::structDeclaration() {

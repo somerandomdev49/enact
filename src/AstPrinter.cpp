@@ -222,6 +222,10 @@ std::string AstPrinter::visitLogicalExpr(LogicalExpr& expr) {
     return "(" + expr.oper.lexeme + " " + evaluate(expr.left) + " " + evaluate(expr.right) + ")";
 }
 
+std::string AstPrinter::visitMemoryExpr(MemoryExpr& expr) {
+    return expr.oper.lexeme + " " + evaluate(expr.object);
+}
+
 std::string AstPrinter::visitNilExpr(NilExpr& expr) {
     return "nil";
 }
