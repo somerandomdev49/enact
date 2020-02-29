@@ -585,7 +585,16 @@ void Analyser::visitLogicalExpr(LogicalExpr &expr) {
 }
 
 void Analyser::visitMemoryExpr(MemoryExpr &expr) {
-    throw errorAt(expr.oper, "Not implemented.");
+    analyse(expr.object);
+
+    Type objectType = expr.object->getType();
+
+    if (!objectType->isObject() && !objectType->isDynamic()) {
+        throw errorAt(expr.oper, "Cannot " + expr.oper.lexeme + " the basic type '" +
+                objectType->toString() + "'.");
+    }
+
+    expr.setType(objectType);
 }
 
 void Analyser::visitNilExpr(NilExpr &expr) {

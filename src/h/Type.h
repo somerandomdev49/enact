@@ -84,7 +84,8 @@ public:
     bool maybeBool() const;
     bool maybeString() const;
 
-    // Complex type groups
+    virtual bool isObject() const = 0;
+
     bool isArray() const;
     bool isFunction() const;
     bool isTrait() const;
@@ -123,6 +124,8 @@ public:
     ~PrimitiveType() override = default;
 
     PrimitiveKind getPrimitiveKind() const;
+
+    bool isObject() const override;
 };
 
 // Array types
@@ -133,6 +136,8 @@ public:
     ~ArrayType() override = default;
 
     const Type getElementType() const;
+
+    bool isObject() const override;
 };
 
 // Function types
@@ -145,6 +150,8 @@ public:
 
     const Type getReturnType() const;
     const std::vector<Type>& getArgumentTypes() const;
+
+    bool isObject() const override;
 };
 
 
@@ -163,6 +170,8 @@ public:
 
     const std::unordered_map<std::string, Type>& getMethods() const;
     std::optional<Type> getMethod(const std::string& name) const;
+
+    bool isObject() const override;
 };
 
 // Struct types
@@ -193,6 +202,8 @@ public:
     std::optional<Type> getFieldOrMethod(const std::string& name) const;
 
     std::optional<Type> getAssocFunction(const std::string& name) const;
+
+    bool isObject() const override;
 };
 
 // Struct constructor types
@@ -205,6 +216,8 @@ public:
 
     const StructType& getStructType() const;
     const FunctionType& getFunctionType() const;
+
+    bool isObject() const override;
 };
 
 #endif //ENACT_TYPE_H

@@ -225,6 +225,9 @@ PrimitiveKind PrimitiveType::getPrimitiveKind() const {
     return m_kind;
 }
 
+bool PrimitiveType::isObject() const {
+    return false;
+}
 
 ArrayType::ArrayType(Type elementType) :
         TypeBase{TypeKind::ARRAY},
@@ -232,6 +235,10 @@ ArrayType::ArrayType(Type elementType) :
 
 const Type ArrayType::getElementType() const {
     return m_elementType;
+}
+
+bool ArrayType::isObject() const {
+    return true;
 }
 
 FunctionType::FunctionType(Type returnType, std::vector<Type> argumentTypes) :
@@ -245,6 +252,10 @@ const Type FunctionType::getReturnType() const {
 
 const std::vector<Type>& FunctionType::getArgumentTypes() const {
     return m_argumentTypes;
+}
+
+bool FunctionType::isObject() const {
+    return true;
 }
 
 TraitType::TraitType(std::string name, std::unordered_map<std::string, Type> methods) :
@@ -266,6 +277,10 @@ std::optional<Type> TraitType::getMethod(const std::string &name) const {
     }
 
     return {};
+}
+
+bool TraitType::isObject() const {
+    return true;
 }
 
 StructType::StructType(std::string name, std::vector<Type> traits,
@@ -335,6 +350,10 @@ std::optional<Type> StructType::getAssocFunction(const std::string &name) const 
     return {};
 }
 
+bool StructType::isObject() const {
+    return true;
+}
+
 ConstructorType::ConstructorType(StructType structType) :
         TypeBase{TypeKind::CONSTRUCTOR},
         m_structType{structType},
@@ -347,4 +366,8 @@ const StructType &ConstructorType::getStructType() const {
 
 const FunctionType &ConstructorType::getFunctionType() const {
     return m_functionType;
+}
+
+bool ConstructorType::isObject() const {
+    return true;
 }
