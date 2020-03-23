@@ -1,17 +1,16 @@
 #include <sstream>
 #include "h/VM.h"
-#include "h/Enact.h"
+#include "h/EnactContext.h"
 #include "h/GC.h"
 
-VM::VM() : m_stack{} {
-    GC::setVM(this);
+VM::VM(EnactContext& context) : m_context{context} {
 }
 
 InterpretResult VM::run(FunctionObject* function) {
     push(Value{function});
 
     CallFrame* frame = &m_frames[m_frameCount++];
-    frame->closure = GC::allocateObject<ClosureObject>(function);
+    frame->closure = m_context.gc().allocateObject<ClosureObject>(function);
     pop();
     push(Value{frame->closure});
     frame->ip = function->getChunk().getCode().data();
@@ -38,7 +37,7 @@ InterpretResult VM::run(FunctionObject* function) {
                 } \
             } while (false)
 
-        if (Enact::getFlags().flagEnabled(Flag::DEBUG_TRACE_EXECUTION)) {
+        if (m_context.options().flagEnabled(Flag::DEBUG_TRACE_EXECUTION)) {
             std::cout << "    ";
             for (Value value : m_stack) {
                 std::cout << "[ " << value << " ] ";
@@ -196,7 +195,7 @@ InterpretResult VM::run(FunctionObject* function) {
             }
             case OpCode::NOT: push(Value{!pop().asBool()}); break;
 
-            case OpCode::COPY: push(Value{pop().asObject()->clone()}); break;
+            case OpCode::COPY: push(Value{m_context.gc().cloneObject(pop().asObject())}); break;
 
             case OpCode::ADD: NUMERIC_OP(+); break;
             case OpCode::SUBTRACT: NUMERIC_OP(-); break;
@@ -216,7 +215,7 @@ InterpretResult VM::run(FunctionObject* function) {
             case OpCode::ARRAY: {
                 uint8_t length = READ_BYTE();
                 Type type = READ_CONSTANT().asObject()->as<TypeObject>()->getContainedType();
-                auto* array = GC::allocateObject<ArrayObject>(length, type);
+                auto* array = m_context.gc().allocateObject<ArrayObject>(length, type);
                 if (length != 0) {
                     for (uint8_t i = length; i-- > 0;) {
                         array->at(i) = pop();
@@ -228,7 +227,7 @@ InterpretResult VM::run(FunctionObject* function) {
             case OpCode::ARRAY_LONG: {
                 uint32_t length = READ_LONG();
                 Type type = READ_CONSTANT_LONG().asObject()->as<TypeObject>()->getContainedType();
-                auto* array = GC::allocateObject<ArrayObject>(length, type);
+                auto* array = m_context.gc().allocateObject<ArrayObject>(length, type);
                 if (length != 0) {
                     for (uint32_t i = length; i-- > 0;) {
                         array->at(i) = pop();
@@ -349,7 +348,7 @@ InterpretResult VM::run(FunctionObject* function) {
             case OpCode::CLOSURE: {
                 FunctionObject* function = READ_CONSTANT().asObject()->as<FunctionObject>();
                 push(Value{function});
-                ClosureObject* closure = GC::allocateObject<ClosureObject>(function);
+                ClosureObject* closure = m_context.gc().allocateObject<ClosureObject>(function);
                 pop();
                 push(Value{closure});
 
@@ -374,7 +373,7 @@ InterpretResult VM::run(FunctionObject* function) {
             case OpCode::CLOSURE_LONG: {
                 FunctionObject* function = READ_CONSTANT_LONG().asObject()->as<FunctionObject>();
                 push(Value{function});
-                ClosureObject* closure = GC::allocateObject<ClosureObject>(function);
+                ClosureObject* closure = m_context.gc().allocateObject<ClosureObject>(function);
                 pop();
                 push(Value{closure});
 
@@ -469,7 +468,7 @@ UpvalueObject* VM::captureUpvalue(uint32_t location) {
 
     if (upvalue != nullptr && upvalue->getLocation() == location) return upvalue;
 
-    auto* createdUpvalue = GC::allocateObject<UpvalueObject>(location);
+    auto* createdUpvalue = m_context.gc().allocateObject<UpvalueObject>(location);
     createdUpvalue->setNext(upvalue);
 
     if (prevUpvalue == nullptr) {
@@ -494,7 +493,7 @@ void VM::runtimeError(const std::string& msg) {
     size_t instruction = frame->ip - frame->closure->getFunction()->getChunk().getCode().data();
     line_t line = frame->closure->getFunction()->getChunk().getLine(instruction);
 
-    const std::string source = Enact::getSourceLine(line);
+    const std::string source = m_context.getSourceLine(line);
 
     std::cerr << "[line " << line << "] Error here:\n    " << source << "\n    ";
     for (int i = 0; i < source.size(); ++i) {

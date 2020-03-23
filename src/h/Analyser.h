@@ -6,6 +6,8 @@
 
 #include <unordered_map>
 
+class EnactContext;
+
 // Walks the AST and assigns a Type to each node.
 
 class Analyser : private StmtVisitor<void>, private ExprVisitor<void> {
@@ -27,6 +29,8 @@ class Analyser : private StmtVisitor<void>, private ExprVisitor<void> {
             std::pair("any", DYNAMIC_TYPE),
             std::pair("nothing", NOTHING_TYPE),
     };
+
+    EnactContext& m_context;
 
     std::vector<std::unordered_map<std::string, Variable>> m_scopes{std::unordered_map<std::string, Variable>{}};
     bool m_hadError = false;
@@ -92,6 +96,8 @@ class Analyser : private StmtVisitor<void>, private ExprVisitor<void> {
     void endScope();
 
 public:
+    explicit Analyser(EnactContext& context);
+
     std::vector<std::unique_ptr<Stmt>> analyse(std::vector<std::unique_ptr<Stmt>> program);
     bool hadError();
 };

@@ -5,6 +5,8 @@
 #include "Chunk.h"
 #include "Object.h"
 
+class EnactContext;
+
 struct Local {
     Token name;
     uint32_t depth;
@@ -24,6 +26,8 @@ enum class FunctionKind {
 
 class Compiler : private StmtVisitor<void>, private ExprVisitor<void> {
     friend class GC;
+
+    EnactContext& m_context;
 
     Compiler* m_enclosing;
 
@@ -113,7 +117,7 @@ class Compiler : private StmtVisitor<void>, private ExprVisitor<void> {
     CompileError errorAt(const Token &token, const std::string &message);
 
 public:
-    explicit Compiler(Compiler* enclosing = nullptr);
+    Compiler(EnactContext& context, Compiler* enclosing = nullptr);
 
     void init(FunctionKind functionKind, Type functionType, const std::string& name);
     FunctionObject* end();

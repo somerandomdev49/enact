@@ -1,19 +1,29 @@
 #include "h/GC.h"
-#include "h/VM.h"
-#include "h/Compiler.h"
+#include "h/EnactContext.h"
 
-size_t GC::m_bytesAllocated{0};
-size_t GC::m_nextRun{1024 * 1024};
+GC::GC(EnactContext &context) : m_context{context} {
+}
 
-std::vector<Object*> GC::m_objects{};
+Object* GC::cloneObject(Object* object) {
+    m_bytesAllocated += object->size();
+    if (m_bytesAllocated > m_nextRun || m_context.options().flagEnabled(Flag::DEBUG_STRESS_GC)) {
+        collectGarbage();
+    }
 
-Compiler* GC::m_currentCompiler{nullptr};
-VM* GC::m_currentVM{nullptr};
+    Object* cloned = object->clone();
 
-std::vector<Object*> GC::m_greyStack{};
+    m_objects.push_back(cloned);
+
+    if (m_context.options().flagEnabled(Flag::DEBUG_LOG_GC)) {
+        std::cout << static_cast<void*>(cloned) << ": allocated object of size " << cloned->size() << " and type " <<
+                  static_cast<int>(cloned->m_type) << ".\n";
+    }
+
+    return object;
+}
 
 void GC::collectGarbage() {
-    if (Enact::getFlags().flagEnabled(Flag::DEBUG_LOG_GC)) {
+    if (m_context.options().flagEnabled(Flag::DEBUG_LOG_GC)) {
         std::cout << "-- GC BEGIN\n";
     }
 
@@ -25,15 +35,15 @@ void GC::collectGarbage() {
 
     m_nextRun = m_bytesAllocated * GC_HEAP_GROW_FACTOR;
 
-    if (Enact::getFlags().flagEnabled(Flag::DEBUG_LOG_GC)) {
+    if (m_context.options().flagEnabled(Flag::DEBUG_LOG_GC)) {
         std::cout << "-- GC END: collected " << before - m_bytesAllocated << " bytes (from " << before << " to " <<
                   m_bytesAllocated << "), next GC at " << m_nextRun << ".\n";
     }
 }
 
 void GC::markRoots() {
-    if (m_currentCompiler) markCompilerRoots();
-    if (m_currentVM) markVMRoots();
+    markCompilerRoots();
+    markVMRoots();
 }
 
 void GC::traceReferences() {
@@ -58,7 +68,7 @@ void GC::sweep() {
 }
 
 void GC::markCompilerRoots() {
-    Compiler* compiler = m_currentCompiler;
+    Compiler* compiler = &m_context.compiler();
     while (compiler != nullptr) {
         markObject(compiler->m_currentFunction);
         compiler = compiler->m_enclosing;
@@ -66,15 +76,15 @@ void GC::markCompilerRoots() {
 }
 
 void GC::markVMRoots() {
-    for (Value &value : m_currentVM->m_stack) {
+    for (Value &value : m_context.vm().m_stack) {
         markValue(value);
     }
 
-    for (size_t i = 0; i < m_currentVM->m_frameCount; ++i) {
-        markObject(m_currentVM->m_frames[i].closure);
+    for (size_t i = 0; i < m_context.vm().m_frameCount; ++i) {
+        markObject(m_context.vm().m_frames[i].closure);
     }
 
-    for (UpvalueObject* upvalue = m_currentVM->m_openUpvalues; upvalue != nullptr; upvalue = upvalue->getNext()) {
+    for (UpvalueObject* upvalue = m_context.vm().m_openUpvalues; upvalue != nullptr; upvalue = upvalue->getNext()) {
         markObject(upvalue);
     }
 }
@@ -85,7 +95,7 @@ void GC::markObject(Object *object) {
 
     m_greyStack.push_back(object);
 
-    if (Enact::getFlags().flagEnabled(Flag::DEBUG_LOG_GC)) {
+    if (m_context.options().flagEnabled(Flag::DEBUG_LOG_GC)) {
         std::cout << static_cast<void *>(object) << ": marked object [ " << *object << " ].\n";
     }
 }
@@ -103,7 +113,7 @@ void GC::markValues(const std::vector<Value>& values) {
 }
 
 void GC::blackenObject(Object *object) {
-    if (Enact::getFlags().flagEnabled(Flag::DEBUG_LOG_GC)) {
+    if (m_context.options().flagEnabled(Flag::DEBUG_LOG_GC)) {
         std::cout << static_cast<void *>(object) << ": blackened object [ " << *object << " ].\n";
     }
 
@@ -133,7 +143,7 @@ void GC::blackenObject(Object *object) {
 }
 
 void GC::freeObject(Object* object) {
-    if (Enact::getFlags().flagEnabled(Flag::DEBUG_LOG_GC)) {
+    if (m_context.options().flagEnabled(Flag::DEBUG_LOG_GC)) {
         std::cout << static_cast<void *>(object) << ": freed object of type " <<
                   static_cast<int>(object->m_type) << ".\n";
     }
@@ -146,12 +156,4 @@ void GC::freeObjects() {
         freeObject(*m_objects.begin());
         m_objects.erase(m_objects.begin());
     }
-}
-
-void GC::setCompiler(Compiler *compiler) {
-    m_currentCompiler = compiler;
-}
-
-void GC::setVM(VM *vm) {
-    m_currentVM = vm;
 }

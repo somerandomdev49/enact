@@ -8,8 +8,8 @@ add_compile_definitions(DEBUG)
 add_executable( enact
         src/h/Type.h
         src/Type.cpp
-        src/Enact.cpp
-        src/h/Enact.h
+        src/EnactContext.cpp
+        src/h/EnactContext.h
         src/h/common.h
         src/h/Token.h
         src/Scanner.cpp
@@ -30,4 +30,4 @@ add_executable( enact
         src/h/AstPrinter.h
         src/Analyser.cpp
         src/h/Analyser.h
-        src/h/Compiler.h src/Compiler.cpp src/h/Natives.h src/Natives.cpp src/h/GC.h src/GC.cpp src/h/Flags.h src/Flags.cpp src/h/Typename.h src/Typename.cpp)
+        src/h/Compiler.h src/Compiler.cpp src/h/Natives.h src/Natives.cpp src/h/GC.h src/GC.cpp src/h/Options.h src/Options.cpp src/h/Typename.h src/Typename.cpp)

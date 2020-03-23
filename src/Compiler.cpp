@@ -1,17 +1,18 @@
 #include "h/Compiler.h"
 #include "h/Object.h"
-#include "h/Enact.h"
+#include "h/EnactContext.h"
 #include "h/Natives.h"
 #include "h/GC.h"
 
-Compiler::Compiler(Compiler* enclosing) : m_enclosing{enclosing} {
-    GC::setCompiler(this);
+Compiler::Compiler(EnactContext& context, Compiler* enclosing) :
+        m_context{context},
+        m_enclosing{enclosing} {
 }
 
 void Compiler::init(FunctionKind functionKind, Type functionType, const std::string& name) {
     m_hadError = false;
 
-    m_currentFunction = GC::allocateObject<FunctionObject>(
+    m_currentFunction = m_context.gc().allocateObject<FunctionObject>(
             functionType,
             Chunk(),
             name
@@ -40,7 +41,6 @@ FunctionObject* Compiler::end() {
         emitByte(OpCode::NIL);
         emitByte(OpCode::RETURN);
     }
-    GC::setCompiler(nullptr);
     return m_currentFunction;
 }
 
@@ -54,7 +54,7 @@ void Compiler::compile(Stmt& stmt) {
     try {
         stmt.accept(this);
     } catch (CompileError& error) {
-        Enact::reportErrorAt(error.getToken(), error.getMessage());
+        m_context.reportErrorAt(error.getToken(), error.getMessage());
         m_hadError = true;
     }
 }
@@ -129,7 +129,7 @@ void Compiler::visitFunctionStmt(FunctionStmt &stmt) {
     addLocal(stmt.name);
     m_locals.back().initialized = true;
 
-    Compiler compiler{this};
+    Compiler compiler{m_context, this};
     compiler.init(FunctionKind::FUNCTION, stmt.type, stmt.name.lexeme);
 
     for (const Param& param : stmt.params) {
@@ -306,7 +306,7 @@ void Compiler::visitArrayExpr(ArrayExpr &expr) {
 
     uint32_t length = expr.value.size();
 
-    auto* type = GC::allocateObject<TypeObject>(expr.getType());
+    auto* type = m_context.gc().allocateObject<TypeObject>(expr.getType());
     uint32_t typeConstant = currentChunk().addConstant(Value{type});
 
     if (length <= UINT8_MAX && typeConstant <= UINT8_MAX) {
@@ -450,7 +450,7 @@ void Compiler::visitNilExpr(NilExpr &expr) {
 }
 
 void Compiler::visitStringExpr(StringExpr &expr) {
-    Object* string = GC::allocateObject<StringObject>(expr.value);
+    Object* string = m_context.gc().allocateObject<StringObject>(expr.value);
     emitConstant(Value{string});
 }
 
@@ -610,7 +610,7 @@ uint32_t Compiler::resolveUpvalue(const Token &name) {
 }
 
 void Compiler::defineNative(std::string name, Type functionType, NativeFn function) {
-    Object* native = GC::allocateObject<NativeObject>(functionType, function);
+    Object* native = m_context.gc().allocateObject<NativeObject>(functionType, function);
     emitConstant(Value{native});
 
     addLocal(Token{TokenType::IDENTIFIER, name, 0, 0});

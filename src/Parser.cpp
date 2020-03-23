@@ -1,9 +1,9 @@
 #include "h/Parser.h"
 #include "h/Token.h"
 #include "h/Chunk.h"
-#include "h/Enact.h"
+#include "h/EnactContext.h"
 
-Parser::Parser(std::string source) : m_source{std::move(source)}, m_scanner{m_source} {}
+Parser::Parser(EnactContext& context) : m_context{context}, m_scanner{context.source()} {}
 
 const ParseRule& Parser::getParseRule(TokenType type) {
     return m_parseRules[(size_t)type];
@@ -555,7 +555,7 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
 }
 
 Parser::ParseError Parser::errorAt(const Token &token, const std::string &message) {
-    Enact::reportErrorAt(token, message);
+    m_context.reportErrorAt(token, message);
     m_hadError = true;
     return ParseError{};
 }
@@ -575,7 +575,7 @@ void Parser::advance() {
         m_current = m_scanner.scanToken();
         if (m_current.type != TokenType::ERROR) break;
 
-        Enact::reportErrorAt(m_current, m_current.lexeme);
+        m_context.reportErrorAt(m_current, m_current.lexeme);
     }
 }
 

@@ -2,7 +2,10 @@
 #include <set>
 #include <sstream>
 #include "h/Analyser.h"
-#include "h/Enact.h"
+#include "h/EnactContext.h"
+
+Analyser::Analyser(EnactContext &context) : m_context{context} {
+}
 
 std::vector<std::unique_ptr<Stmt>> Analyser::analyse(std::vector<std::unique_ptr<Stmt>> program) {
     m_hadError = false;
@@ -44,7 +47,7 @@ bool Analyser::hadError() {
 }
 
 Analyser::AnalysisError Analyser::errorAt(const Token &token, const std::string &message) {
-    Enact::reportErrorAt(token, message);
+    m_context.reportErrorAt(token, message);
     m_hadError = true;
     return AnalysisError{};
 }

@@ -12,6 +12,8 @@
 
 #include "../ast/Stmt.h"
 
+class EnactContext;
+
 enum class Precedence {
     NONE,
     ASSIGNMENT,  // =
@@ -44,7 +46,7 @@ private:
         ParseError() : std::runtime_error{"Uncaught ParseError: Internal"} {}
     };
 
-    std::string m_source;
+    EnactContext& m_context;
     Scanner m_scanner;
 
     bool m_hadError = false;
@@ -175,7 +177,7 @@ private:
     void synchronise();
 
 public:
-    explicit Parser(std::string source);
+    explicit Parser(EnactContext& context);
     std::vector<std::unique_ptr<Stmt>> parse();
     bool hadError();
 };
