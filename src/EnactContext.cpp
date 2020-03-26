@@ -57,6 +57,8 @@ InterpretResult EnactContext::runFile(const std::string &path) {
 }
 
 InterpretResult EnactContext::runPrompt() {
+    m_source = "!repl!";
+
     while (true) {
         std::cout << "enact > ";
 
