@@ -417,6 +417,10 @@ InterpretResult VM::run(FunctionObject* function) {
                 frame = &m_frames[m_frameCount - 1];
                 break;
             }
+
+            case OpCode::PAUSE: {
+                return InterpretResult::OK;
+            }
         }
 
         #undef READ_BYTE
